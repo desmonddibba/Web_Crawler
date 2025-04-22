@@ -14,20 +14,17 @@ class ResponseDTO(BaseModel):
     pages: list[str]
 
 
-
-def crawl(url:str, domain:str, visited_links:set[str]):
+def crawl(url:str, domain:str, visited_links:set[str], max_depth:int, depth:int = 0) -> None:
     """
-    Crawls a domain, collecting all internal links in the visited_links set.
+    Crawls a domain, collecting all internal links found in the visited_links set.
     Skips edge cases such as mailto:, phone numbers, and JavaScript links.
     """
-
     url = urldefrag(url)[0]
-
-    if url in visited_links:
+    if url in visited_links or depth > max_depth:
         return
+    
     visited_links.add(url)
-    print(f"-> Crawling: {url}")
-
+    print(f"--> Depth: {depth} : Crawling: {url}")
     try:
         response = requests.get(url, timeout=7)
         tree = html.fromstring(response.text)
@@ -37,7 +34,7 @@ def crawl(url:str, domain:str, visited_links:set[str]):
         for link in links:
             href = link.get("href")
 
-            print(f"--> Parsing: {href}")
+            print(f"--> Depth: {depth} : Parsing: {href}")
             parsed_href = urlparse(href)
 
             # Ensure same domain. Filter out other domains.
@@ -48,21 +45,28 @@ def crawl(url:str, domain:str, visited_links:set[str]):
             if not parsed_href.netloc:
                 continue
             
-            crawl(href, domain, visited_links)
+            crawl(url=href, domain=domain, visited_links=visited_links, max_depth=max_depth, depth=depth+1)
+
     except Exception as e:
         print(f"Error crawling {url}: {e}")
 
 
 
-
-
-
 @app.get("/pages", response_model=ResponseDTO)
-def get_pages(target: str = Query(..., description="Enter start URL")) -> ResponseDTO:
+def get_pages(
+    target: str = Query(..., description="Enter start URL"),
+    max_depth: int = Query(5, description="Optional crawl depth limit")
+    ) -> ResponseDTO:
+    """
+    GET /pages?target=
+
+    Crawls a domain, returning all internal links found.
+    Writes the results to a timestamped JSON file.
+    """ 
     domain = urlparse(target).netloc
     visited_links = set()
 
-    crawl(url=target, domain=domain, visited_links=visited_links)
+    crawl(url=target, domain=domain, visited_links=visited_links, max_depth=max_depth)
     response = ResponseDTO(domain=target, pages=sorted(visited_links))
 
     # Write response to Json file marked named after domain + timestamp 
@@ -72,7 +76,6 @@ def get_pages(target: str = Query(..., description="Enter start URL")) -> Respon
 
         with open(filename, "w", encoding="utf-8") as f:
             f.write(response.model_dump_json(indent=2))
-
     except Exception as e:
         print(f"Error writing to Json file: {e}")
 

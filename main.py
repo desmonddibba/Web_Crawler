@@ -15,13 +15,12 @@ class ResponseDTO(BaseModel):
 
 
 
-def crawl(url, domain, visited_links):
+def crawl(url:str, domain:str, visited_links:set[str]):
     """
-    Crawls a domain, collecting all internal links.
-    Skips edge cases such as mailto: phonenumber and javascript links.
-    Saves the collection of links in a json file named after domain with a timestamp.
+    Crawls a domain, collecting all internal links in the visited_links set.
+    Skips edge cases such as mailto:, phone numbers, and JavaScript links.
     """
-    
+
     url = urldefrag(url)[0]
 
     if url in visited_links:
@@ -66,6 +65,7 @@ def get_pages(target: str = Query(..., description="Enter start URL")) -> Respon
     crawl(url=target, domain=domain, visited_links=visited_links)
     response = ResponseDTO(domain=target, pages=sorted(visited_links))
 
+    # Write response to Json file marked named after domain + timestamp 
     try: 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"crawled_{domain}_{timestamp}.json"

@@ -14,7 +14,7 @@ Has an optional max_depth parameter to limit crawl depth (default set to 5).
 
 # Installation
 1. Clone repo
-2. Install requirements from requirements.txt
+2. Install requirements from requirements.txt : pip install -r requirements.txt
 3. Start API with: uvicorn main:app
 4. Example endpoint: /pages?target=https://example.com&max_depth=3
 5. Or navigate to http://localhost:port/docs for Swagger UI

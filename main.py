@@ -15,6 +15,8 @@ class ResponseDTO(BaseModel):
 
 
 def crawl(url, domain, visited_links):
+    url = urldefrag(url)[0]
+
     if url in visited_links:
         return
     visited_links.add(url)

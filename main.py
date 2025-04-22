@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from lxml import html
-from urllib.parse import urlparse, urlunparse, urldefrag
+from urllib.parse import urlparse, urldefrag
 import requests
+import datetime
 
 
 app = FastAPI(title="Desmonds Crawler")
@@ -57,4 +58,12 @@ def get_pages(target: str = Query(..., description="Enter start URL")) -> Respon
     visited_links = set()
 
     crawl(url=target, domain=domain, visited_links=visited_links)
-    return ResponseDTO(domain=target, pages=visited_links)
+
+    response = ResponseDTO(domain=target, pages=sorted(visited_links))
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"crawled_{domain}_{timestamp}.json"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(response.model_dump_json(indent=2))
+
+    return response

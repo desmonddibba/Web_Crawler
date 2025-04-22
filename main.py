@@ -58,7 +58,7 @@ def get_pages(
     max_depth: int = Query(5, description="Optional crawl depth limit")
     ) -> ResponseDTO:
     """
-    GET /pages?target=
+    GET /pages?target=<url>&max_depth=<int>
 
     Crawls a domain, returning all internal links found.
     Writes the results to a timestamped JSON file.
